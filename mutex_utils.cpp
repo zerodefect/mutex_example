@@ -6,27 +6,6 @@
 #include "clock_wait.hpp"
 
 ///////////////////////////////////////////////////////////////////////////
-bool timed_lock(pthread_mutex_t *const pMutex, const timespec *time)
-{
-    const int n = pthread_mutex_timedlock(pMutex, time);
-    if (0 == n)
-    {
-        return true;
-    }
-    else if (ETIMEDOUT == n)
-    {
-        return false;
-    }
-    else if (EOWNERDEAD == n)
-    {
-        pthread_mutex_consistent(pMutex);
-        return true;
-    }
-
-    return false;
-}
-
-///////////////////////////////////////////////////////////////////////////
 class mutexattr_releaser final
 {
 public:
@@ -134,6 +113,27 @@ void unlock_mutex(pthread_mutex_t *pMutex)
 {
     const int n = pthread_mutex_unlock(pMutex);
     assert(n == 0);
+}
+
+///////////////////////////////////////////////////////////////////////////
+bool timed_lock(pthread_mutex_t *const pMutex, const timespec *time)
+{
+    const int n = pthread_mutex_timedlock(pMutex, time);
+    if (0 == n)
+    {
+        return true;
+    }
+    else if (ETIMEDOUT == n)
+    {
+        return false;
+    }
+    else if (EOWNERDEAD == n)
+    {
+        pthread_mutex_consistent(pMutex);
+        return true;
+    }
+
+    return false;
 }
 
 ///////////////////////////////////////////////////////////////////////////
