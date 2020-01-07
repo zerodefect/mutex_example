@@ -36,22 +36,33 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    pthread_mutex_t *pMutex = apManagedShMem->find_or_construct<pthread_mutex_t>("mutex")();
+    // NOTE: There was a bug here discovered on SO: Only initialize MUTEX once even if item already exists.
+    pthread_mutex_t *pMutex = apManagedShMem->find<pthread_mutex_t>("mutex").first;
+    if (pMutex == nullptr)
+    {
+        pMutex = apManagedShMem->find_or_construct<pthread_mutex_t>("mutex")();
+        if (pMutex != nullptr && !initialise_mutex(pMutex)) { return 1; }
+    }
+
     if (pMutex == nullptr)
     {
         std::cerr << "Error: Could not instantiate shared mutex." << std::endl;
         return 1;
     }
 
-    pthread_cond_t *pCv = apManagedShMem->find_or_construct<pthread_cond_t>("cv")();
+    // NOTE: There was a bug here discovered on SO: Only initialize CV once even if item already exists.
+    pthread_cond_t *pCv = apManagedShMem->find<pthread_cond_t>("cv").first;
+    if (pCv == nullptr)
+    {
+        pCv = apManagedShMem->find_or_construct<pthread_cond_t>("cv")();
+        if (pCv != nullptr && !initialise_cv(pCv)) { return 1; }
+    }
+
     if (pCv == nullptr)
     {
         std::cerr << "Error: Could not instantiate shared condition variable." << std::endl;
         return 1;
     }
-
-    if (!initialise_mutex(pMutex)) { return 1; }
-    if (!initialise_cv(pCv)) { return 1; }
 
     std::cout << "Commencing wait loop" << std::endl;
 
